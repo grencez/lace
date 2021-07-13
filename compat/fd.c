@@ -16,6 +16,7 @@
 /* For _CrtSetReportMode().*/
 #include <crtdbg.h>
 
+
 static void invalid_parameter_noop_handler(
     const wchar_t* expression,
     const wchar_t* function,
@@ -31,6 +32,9 @@ static void invalid_parameter_noop_handler(
   /* Nothing.*/
 }
 #endif
+
+/* Give my lock!*/
+#include "fd_exclusive.h"
 
 
   int
@@ -197,6 +201,8 @@ lace_compat_fd_pipe(lace_compat_fd_t* ret_produce,
 {
   int fds[2] = {-1, -1};
   int istat;
+  LACE_COMPAT_FD_ENTER_SHARED;
+
 #ifndef _MSC_VER
   istat = pipe(fds);
 #else
@@ -215,16 +221,17 @@ lace_compat_fd_pipe(lace_compat_fd_t* ret_produce,
   }
 
   if (istat != 0 || fds[0] < 0 || fds[1] < 0) {
-    *ret_produce = -1;
-    *ret_consume = -1;
     if (fds[0] >= 0) {lace_compat_fd_close(fds[0]);}
     if (fds[1] >= 0) {lace_compat_fd_close(fds[1]);}
-    return -1;
+    fds[0] = -1;
+    fds[1] = -1;
+    istat = -1;
   }
 
   *ret_produce = fds[1];
   *ret_consume = fds[0];
-  return 0;
+  LACE_COMPAT_FD_LEAVE_SHARED;
+  return istat;
 }
 
   size_t
@@ -259,6 +266,7 @@ lace_compat_fd_spawnvp(const lace_compat_fd_t* fds_to_inherit,
   lace_compat_pid_t pid;
   int e = 0;
   unsigned i;
+  LACE_COMPAT_FD_ENTER_EXCLUSIVE;
   if (fds_to_inherit) {
     for (i = 0; fds_to_inherit[i] >= 0; ++i) {
       lace_compat_fd_inherit(fds_to_inherit[i]);
@@ -275,6 +283,7 @@ lace_compat_fd_spawnvp(const lace_compat_fd_t* fds_to_inherit,
       lace_compat_fd_close(fds_to_inherit[i]);
     }
   }
+  LACE_COMPAT_FD_LEAVE_EXCLUSIVE;
   if (pid < 0) {
     errno = e;
     return -1;

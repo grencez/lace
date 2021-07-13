@@ -53,10 +53,6 @@ cc_binary(
     deps = [
         "//src/cx:cx_lib",
     ],
-    linkopts = select({
-        "@platforms//os:windows": [],
-        "//conditions:default": ["-pthread"],
-    }),
     visibility = ["//:__pkg__"],
 )
 

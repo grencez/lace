@@ -10,6 +10,7 @@ cc_library(
     srcs = [
         "//compat:errno.c",
         "//compat:fd.c",
+        "//compat:fd_exclusive.h",
         "//compat:file.c",
         "//compat:random.c",
         "//compat:sh.c",
@@ -26,7 +27,7 @@ cc_library(
         "@platforms//os:windows": [
             "-DEFAULTLIB:advapi32.lib",  # For RtlGenRandom().
         ],
-        "//conditions:default": [],
+        "//conditions:default": ["-pthread"],
     }),
     visibility = ["//visibility:public"],
 )
@@ -60,9 +61,5 @@ cc_library(
     defines = ["LACE_TOOL_LIBRARY"],
     includes = ["include"],
     deps = [":lace_compat_lib"],
-    linkopts = select({
-        "@platforms//os:windows": [],
-        "//conditions:default": ["-pthread"],
-    }),
     visibility = ["//visibility:public"],
 )
